@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -189,8 +189,6 @@ function createVideoPlane(
   syncToDom();
   frame.classList.add("webgl-active");
 
-  video.play().catch(() => undefined);
-
   return () => {
     visible = false;
     cancelAnimationFrame(raf);
@@ -213,12 +211,9 @@ type FilmProps = {
   caption: string;
   title: string;
   description: string;
-  activeSound: number | null;
-  onToggleSound: (index: number) => void;
+  onOpenVideo: (index: number) => void;
   videoRef: (index: number, video: HTMLVideoElement | null) => void;
   frameRef: (index: number, frame: HTMLElement | null) => void;
-  controlRef: (index: number, control: HTMLButtonElement | null) => void;
-  onPointerActivity: (index: number, over: boolean) => void;
 };
 
 function Film({
@@ -227,12 +222,9 @@ function Film({
   caption,
   title,
   description,
-  activeSound,
-  onToggleSound,
+  onOpenVideo,
   videoRef,
   frameRef,
-  controlRef,
-  onPointerActivity,
 }: FilmProps) {
   return (
     <figure className={`film film--${format} block`}>
@@ -255,9 +247,17 @@ function Film({
       <div
         className="film-frame"
         ref={(node) => frameRef(index, node)}
-        onPointerEnter={() => onPointerActivity(index, true)}
-        onPointerMove={() => onPointerActivity(index, true)}
-        onPointerLeave={() => onPointerActivity(index, false)}
+        role="button"
+        tabIndex={0}
+        aria-label={`Watch ${caption} from the beginning in full screen with sound`}
+        data-cursor-target
+        onClick={() => onOpenVideo(index)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onOpenVideo(index);
+          }
+        }}
       >
         <div className="video-surface">
           <video
@@ -265,7 +265,6 @@ function Film({
             className="film-video"
             src={VIDEO_SOURCES[index]}
             crossOrigin="anonymous"
-            autoPlay
             muted
             loop
             playsInline
@@ -273,19 +272,9 @@ function Film({
             aria-label={caption}
           />
         </div>
-        <button
-          ref={(node) => controlRef(index, node)}
-          type="button"
-          className={`sound-control${activeSound === index ? " is-active" : ""}`}
-          aria-label={activeSound === index ? "Mute this film" : "Play this film with sound"}
-          aria-pressed={activeSound === index}
-          data-cursor-target
-          onFocus={() => onPointerActivity(index, true)}
-          onBlur={() => onPointerActivity(index, false)}
-          onClick={() => onToggleSound(index)}
-        >
-          {activeSound === index ? "MUTE" : "SOUND"}
-        </button>
+        <div className="watch-prompt" aria-hidden="true">
+          <span>Click to watch</span>
+        </div>
       </div>
     </figure>
   );
@@ -295,10 +284,7 @@ export function ScreeningRoom() {
   const rootRef = useRef<HTMLDivElement>(null);
   const videosRef = useRef<Array<HTMLVideoElement | null>>([]);
   const framesRef = useRef<Array<HTMLElement | null>>([]);
-  const controlsRef = useRef<Array<HTMLButtonElement | null>>([]);
-  const hideTimersRef = useRef<Array<ReturnType<typeof setTimeout> | null>>([]);
-  const activeSoundRef = useRef<number | null>(null);
-  const [activeSound, setActiveSound] = useState<number | null>(null);
+  const watchedVideosRef = useRef<boolean[]>([false, false]);
 
   const setVideoRef = useCallback((index: number, node: HTMLVideoElement | null) => {
     videosRef.current[index] = node;
@@ -308,52 +294,32 @@ export function ScreeningRoom() {
     framesRef.current[index] = node;
   }, []);
 
-  const setControlRef = useCallback(
-    (index: number, node: HTMLButtonElement | null) => {
-      controlsRef.current[index] = node;
-    },
-    [],
-  );
+  const openVideo = useCallback((index: number) => {
+    const video = videosRef.current[index] as
+      | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
+      | null;
+    if (!video) return;
 
-  const toggleSound = useCallback((index: number) => {
-    const next = activeSoundRef.current === index ? null : index;
-    activeSoundRef.current = next;
-    setActiveSound(next);
-
-    videosRef.current.forEach((video, videoIndex) => {
-      if (!video) return;
-      gsap.killTweensOf(video);
-
-      if (videoIndex === next) {
-        video.muted = false;
-        video.play().catch(() => undefined);
-        gsap.to(video, { volume: 1, duration: 0.3, ease: "vj" });
-      } else {
-        gsap.to(video, {
-          volume: 0,
-          duration: 0.3,
-          ease: "vj",
-          onComplete: () => {
-            video.muted = true;
-          },
-        });
-      }
+    watchedVideosRef.current[index] = true;
+    videosRef.current.forEach((otherVideo, otherIndex) => {
+      if (!otherVideo || otherIndex === index) return;
+      otherVideo.muted = true;
+      otherVideo.volume = 0;
+      otherVideo.pause();
     });
-  }, []);
 
-  const handlePointerActivity = useCallback((index: number, over: boolean) => {
-    const control = controlsRef.current[index];
-    const previousTimer = hideTimersRef.current[index];
-    if (previousTimer) clearTimeout(previousTimer);
-    if (!control) return;
+    video.pause();
+    video.currentTime = 0;
+    video.muted = false;
+    video.volume = 1;
+    video.controls = true;
+    video.play().catch(() => undefined);
 
-    gsap.to(control, { opacity: 1, duration: 0.4, ease: "vj" });
-    hideTimersRef.current[index] = setTimeout(
-      () => {
-        gsap.to(control, { opacity: 0, duration: 0.4, ease: "vj" });
-      },
-      over ? 2000 : 400,
-    );
+    if (video.requestFullscreen) {
+      video.requestFullscreen().catch(() => undefined);
+    } else {
+      video.webkitEnterFullscreen?.();
+    }
   }, []);
 
   useLayoutEffect(() => {
@@ -365,6 +331,7 @@ export function ScreeningRoom() {
     const touch = window.matchMedia("(pointer: coarse)").matches || ScrollTrigger.isTouch === 1;
     const splits: SplitText[] = [];
     const threeCleanups: ThreeCleanup[] = [];
+    const playbackObservers: IntersectionObserver[] = [];
     let smoother: ScrollSmoother | undefined;
     let velocityTrigger: ScrollTrigger | undefined;
     let loadTimer: ReturnType<typeof setTimeout> | undefined;
@@ -402,6 +369,47 @@ export function ScreeningRoom() {
       : undefined;
     if (introSplit) splits.push(introSplit);
 
+    const stopFullscreenPlayback = () => {
+      if (document.fullscreenElement) return;
+      videosRef.current.forEach((video) => {
+        if (!video) return;
+        video.muted = true;
+        video.volume = 0;
+        video.controls = false;
+        video.pause();
+      });
+    };
+
+    document.addEventListener("fullscreenchange", stopFullscreenPlayback);
+    videosRef.current.forEach((video) => {
+      video?.addEventListener("webkitendfullscreen", stopFullscreenPlayback);
+    });
+
+    framesRef.current.forEach((frame, index) => {
+      const video = videosRef.current[index];
+      if (!frame || !video) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          const inFullscreen = document.fullscreenElement === video;
+          if (entry.isIntersecting && watchedVideosRef.current[index] && !inFullscreen) {
+            video.controls = false;
+            video.muted = true;
+            video.volume = 0;
+            video.play().catch(() => undefined);
+          } else if (!entry.isIntersecting && !inFullscreen) {
+            video.muted = true;
+            video.volume = 0;
+            video.pause();
+          }
+        },
+        { threshold: 0.42 },
+      );
+
+      observer.observe(frame);
+      playbackObservers.push(observer);
+    });
+
     if (reducedMotion) {
       const intro = root.querySelector<HTMLElement>(".intro");
       if (intro) gsap.set(intro, { display: "none" });
@@ -409,15 +417,19 @@ export function ScreeningRoom() {
         gsap.set(frame, { clipPath: "inset(0% 0 0 0)", scale: 1, opacity: 1 });
       });
       return () => {
-        hideTimersRef.current.forEach((timer) => timer && clearTimeout(timer));
+        playbackObservers.forEach((observer) => observer.disconnect());
+        document.removeEventListener("fullscreenchange", stopFullscreenPlayback);
+        videosRef.current.forEach((video) => {
+          video?.removeEventListener("webkitendfullscreen", stopFullscreenPlayback);
+        });
         splits.reverse().forEach((split) => split.revert());
       };
     }
 
     const setupCursorAndLinks = () => {
-      const email = root.querySelector<HTMLAnchorElement>(".email-link");
-      const underline = root.querySelector<HTMLElement>(".email-underline");
-      if (email && underline) {
+      root.querySelectorAll<HTMLAnchorElement>(".contact-link").forEach((link) => {
+        const underline = link.querySelector<HTMLElement>(".contact-underline");
+        if (!underline) return;
         const enter = () => {
           gsap.set(underline, { transformOrigin: "left center" });
           gsap.to(underline, { scaleX: 1, duration: 0.4, ease: "vj" });
@@ -426,9 +438,9 @@ export function ScreeningRoom() {
           gsap.set(underline, { transformOrigin: "right center" });
           gsap.to(underline, { scaleX: 0, duration: 0.4, ease: "vj" });
         };
-        email.addEventListener("pointerenter", enter);
-        email.addEventListener("pointerleave", leave);
-      }
+        link.addEventListener("pointerenter", enter);
+        link.addEventListener("pointerleave", leave);
+      });
 
       if (touch) return;
       const cursor = root.querySelector<HTMLElement>(".cursor");
@@ -545,7 +557,6 @@ export function ScreeningRoom() {
     const intro = root.querySelector<HTMLElement>(".intro");
     const introCard = root.querySelector<HTMLElement>(".intro-card");
     const introDot = root.querySelector<HTMLElement>(".intro-dot");
-    const accentStroke = root.querySelector<HTMLElement>(".accent-stroke");
     const introChars = introSplit?.chars ?? [];
 
     gsap.set(loadTargets, { yPercent: 120, opacity: 0 });
@@ -553,10 +564,6 @@ export function ScreeningRoom() {
     if (introCard) {
       gsap.set(introCard, { autoAlpha: 0, scaleX: 0.16, scaleY: 0.2 });
     }
-    if (accentStroke) {
-      gsap.set(accentStroke, { scaleX: 0, transformOrigin: "right center" });
-    }
-
     loadTimer = setTimeout(() => {
       const introTimeline = gsap.timeline({ defaults: { ease: "vj" } });
 
@@ -586,17 +593,16 @@ export function ScreeningRoom() {
           duration: 1.05,
           stagger: 0.025,
           onComplete: setupScroll,
-        })
-        .to(
-          accentStroke,
-          { scaleX: 1, duration: 0.8 },
-          "<0.32",
-        );
+        });
     }, 180);
 
     return () => {
       if (loadTimer) clearTimeout(loadTimer);
-      hideTimersRef.current.forEach((timer) => timer && clearTimeout(timer));
+      playbackObservers.forEach((observer) => observer.disconnect());
+      document.removeEventListener("fullscreenchange", stopFullscreenPlayback);
+      videosRef.current.forEach((video) => {
+        video?.removeEventListener("webkitendfullscreen", stopFullscreenPlayback);
+      });
       threeCleanups.forEach((cleanup) => cleanup());
       velocityTrigger?.kill();
       smoother?.kill();
@@ -644,10 +650,9 @@ export function ScreeningRoom() {
                   <span className="title-sans">The Ungasan</span>
                   <span className="title-serif">in motion.</span>
                 </h1>
-                <span className="accent-stroke" aria-hidden="true" />
                 <p className="hero-copy" data-split data-load-text>
-                  Two cinematic directions, created with AI from existing imagery—designed
-                  to turn place into feeling, and feeling into desire.
+                  Two cinematic directions designed to turn place into feeling—and feeling
+                  into desire.
                 </p>
                 <p className="scroll-cue" data-split data-load-text>
                   View the films
@@ -661,24 +666,10 @@ export function ScreeningRoom() {
               caption="Vertical film · Social · 9:16"
               title="Made for the first impression."
               description="A sharper rhythm for social—built to hold attention and make the resort instantly felt."
-              activeSound={activeSound}
-              onToggleSound={toggleSound}
+              onOpenVideo={openVideo}
               videoRef={setVideoRef}
               frameRef={setFrameRef}
-              controlRef={setControlRef}
-              onPointerActivity={handlePointerActivity}
             />
-
-            <section className="manifesto block">
-              <h2 className="manifesto-title" data-split data-scroll-text>
-                <span className="manifesto-sans">No new shoot.</span>
-                <span className="manifesto-serif">A new way to see</span>
-                <span className="manifesto-sans">what already exists.</span>
-              </h2>
-              <p className="manifesto-note" data-split data-scroll-text>
-                AI-assisted. Art-directed. Built from The Ungasan’s existing visual world.
-              </p>
-            </section>
 
             <Film
               index={1}
@@ -686,12 +677,9 @@ export function ScreeningRoom() {
               caption="Brand film · Website · 16:9"
               title="Space, atmosphere, longing."
               description="A widescreen expression for the website, presentations and paid campaigns."
-              activeSound={activeSound}
-              onToggleSound={toggleSound}
+              onOpenVideo={openVideo}
               videoRef={setVideoRef}
               frameRef={setFrameRef}
-              controlRef={setControlRef}
-              onPointerActivity={handlePointerActivity}
             />
 
             <section className="closing block">
@@ -699,8 +687,8 @@ export function ScreeningRoom() {
                 The opportunity
               </p>
               <h2 className="closing-copy" data-split data-scroll-text>
-                One image library.
-                <strong>New cinematic possibilities.</strong>
+                <strong>Direction, strategy &amp; agility.</strong>
+                <span className="closing-subline">The frame that wins the client.</span>
               </h2>
               <p className="closing-note" data-split data-scroll-text>
                 If this direction resonates, I’d be glad to shape the next chapter for The
@@ -711,16 +699,30 @@ export function ScreeningRoom() {
                 <p className="contact-label" data-split data-scroll-text>
                   Continue the conversation
                 </p>
-                <a
-                  className="email-link"
-                  href="mailto:vjone.official@gmail.com"
-                  data-cursor-target
-                  data-split
-                  data-scroll-text
-                >
-                  vjone.official@gmail.com
-                  <span className="email-underline" aria-hidden="true" />
-                </a>
+                <div className="contact-links">
+                  <a
+                    className="contact-link"
+                    href="mailto:vjone.official@gmail.com"
+                    data-cursor-target
+                    data-split
+                    data-scroll-text
+                  >
+                    vjone.official@gmail.com
+                    <span className="contact-underline" aria-hidden="true" />
+                  </a>
+                  <a
+                    className="contact-link"
+                    href="https://wa.me/?text=Hello%20Vanius%2C%20I%27d%20like%20to%20discuss%20The%20Ungasan%20film%20direction."
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor-target
+                    data-split
+                    data-scroll-text
+                  >
+                    WhatsApp ↗
+                    <span className="contact-underline" aria-hidden="true" />
+                  </a>
+                </div>
               </div>
 
               <div className="footer-mark">

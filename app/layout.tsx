@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "The Ungasan in Motion — Private Presentation",
-  description: "Two AI-assisted cinematic directions for The Ungasan Clifftop Resort.",
+  description: "Two cinematic directions for The Ungasan Clifftop Resort.",
   robots: {
     index: false,
     follow: false,
