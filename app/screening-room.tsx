@@ -255,7 +255,7 @@ function Film({
         </p>
       </figcaption>
       <div
-        className={`film-frame${isWatched ? " is-watched" : ""}`}
+        className={`film-frame film-frame--${format}${isWatched ? " is-watched" : ""}`}
         ref={(node) => frameRef(index, node)}
         role="button"
         tabIndex={0}

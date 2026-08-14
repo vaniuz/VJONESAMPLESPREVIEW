@@ -599,6 +599,17 @@ button {
   opacity: 1 !important;
 }
 
+.film-frame--vertical:fullscreen .video-surface,
+.film-frame--vertical:-webkit-full-screen .video-surface {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: min(100vw, 56.25vh);
+  height: min(100vh, 177.7778vw);
+  aspect-ratio: 9 / 16;
+  transform: translate(-50%, -50%);
+}
+
 .film-frame:fullscreen .video-canvas,
 .film-frame:-webkit-full-screen .video-canvas {
   display: none;
