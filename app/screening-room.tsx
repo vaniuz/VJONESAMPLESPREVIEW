@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -211,7 +211,12 @@ type FilmProps = {
   caption: string;
   title: string;
   description: string;
+  isPlaying: boolean;
+  isMuted: boolean;
+  isWatched: boolean;
   onOpenVideo: (index: number) => void;
+  onTogglePlayback: (index: number) => void;
+  onToggleSound: (index: number) => void;
   videoRef: (index: number, video: HTMLVideoElement | null) => void;
   frameRef: (index: number, frame: HTMLElement | null) => void;
 };
@@ -222,7 +227,12 @@ function Film({
   caption,
   title,
   description,
+  isPlaying,
+  isMuted,
+  isWatched,
   onOpenVideo,
+  onTogglePlayback,
+  onToggleSound,
   videoRef,
   frameRef,
 }: FilmProps) {
@@ -245,7 +255,7 @@ function Film({
         </p>
       </figcaption>
       <div
-        className="film-frame"
+        className={`film-frame${isWatched ? " is-watched" : ""}`}
         ref={(node) => frameRef(index, node)}
         role="button"
         tabIndex={0}
@@ -269,11 +279,47 @@ function Film({
             loop
             playsInline
             preload="metadata"
+            controlsList="nodownload noplaybackrate noremoteplayback"
+            disablePictureInPicture
+            onContextMenu={(event) => event.preventDefault()}
             aria-label={caption}
           />
         </div>
         <div className="watch-prompt" aria-hidden="true">
           <span>Click to watch</span>
+        </div>
+        <div className="video-controls" aria-label={`${caption} playback controls`}>
+          <button
+            className="video-control video-control--play"
+            type="button"
+            aria-label={isPlaying ? "Pause film" : "Play film"}
+            aria-pressed={isPlaying}
+            onClick={(event) => {
+              event.stopPropagation();
+              onTogglePlayback(index);
+            }}
+          >
+            <span className={isPlaying ? "pause-icon" : "play-icon"} aria-hidden="true" />
+            <span className="control-label">{isPlaying ? "Pause" : "Play"}</span>
+          </button>
+          <span className="control-divider" aria-hidden="true" />
+          <button
+            className={`video-control video-control--sound${isMuted ? " is-muted" : ""}`}
+            type="button"
+            aria-label={isMuted ? "Turn sound on" : "Mute film"}
+            aria-pressed={!isMuted}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleSound(index);
+            }}
+          >
+            <span className="sound-bars" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="control-label">Sound {isMuted ? "off" : "on"}</span>
+          </button>
         </div>
       </div>
     </figure>
@@ -285,6 +331,9 @@ export function ScreeningRoom() {
   const videosRef = useRef<Array<HTMLVideoElement | null>>([]);
   const framesRef = useRef<Array<HTMLElement | null>>([]);
   const watchedVideosRef = useRef<boolean[]>([false, false]);
+  const [playingVideos, setPlayingVideos] = useState<boolean[]>([false, false]);
+  const [mutedVideos, setMutedVideos] = useState<boolean[]>([true, true]);
+  const [watchedVideos, setWatchedVideos] = useState<boolean[]>([false, false]);
 
   const setVideoRef = useCallback((index: number, node: HTMLVideoElement | null) => {
     videosRef.current[index] = node;
@@ -300,26 +349,57 @@ export function ScreeningRoom() {
       | null;
     if (!video) return;
 
+    const frame = framesRef.current[index] as
+      | (HTMLElement & { webkitRequestFullscreen?: () => void })
+      | null;
+
     watchedVideosRef.current[index] = true;
+    setWatchedVideos((current) => current.map((watched, item) => watched || item === index));
     videosRef.current.forEach((otherVideo, otherIndex) => {
       if (!otherVideo || otherIndex === index) return;
       otherVideo.muted = true;
       otherVideo.volume = 0;
       otherVideo.pause();
     });
+    setPlayingVideos((current) => current.map((_, item) => item === index));
+    setMutedVideos((current) => current.map((_, item) => item !== index));
 
     video.pause();
     video.currentTime = 0;
     video.muted = false;
     video.volume = 1;
-    video.controls = true;
     video.play().catch(() => undefined);
 
-    if (video.requestFullscreen) {
-      video.requestFullscreen().catch(() => undefined);
+    if (frame?.requestFullscreen) {
+      frame.requestFullscreen().catch(() => undefined);
+    } else if (frame?.webkitRequestFullscreen) {
+      frame.webkitRequestFullscreen();
     } else {
       video.webkitEnterFullscreen?.();
     }
+  }, []);
+
+  const togglePlayback = useCallback((index: number) => {
+    const video = videosRef.current[index];
+    if (!video) return;
+
+    if (video.paused) {
+      video.play().catch(() => undefined);
+      setPlayingVideos((current) => current.map((playing, item) => item === index ? true : playing));
+    } else {
+      video.pause();
+      setPlayingVideos((current) => current.map((playing, item) => item === index ? false : playing));
+    }
+  }, []);
+
+  const toggleSound = useCallback((index: number) => {
+    const video = videosRef.current[index];
+    if (!video) return;
+
+    const nextMuted = !video.muted;
+    video.muted = nextMuted;
+    video.volume = nextMuted ? 0 : 1;
+    setMutedVideos((current) => current.map((muted, item) => item === index ? nextMuted : muted));
   }, []);
 
   useLayoutEffect(() => {
@@ -375,9 +455,10 @@ export function ScreeningRoom() {
         if (!video) return;
         video.muted = true;
         video.volume = 0;
-        video.controls = false;
         video.pause();
       });
+      setPlayingVideos([false, false]);
+      setMutedVideos([true, true]);
     };
 
     document.addEventListener("fullscreenchange", stopFullscreenPlayback);
@@ -391,16 +472,19 @@ export function ScreeningRoom() {
 
       const observer = new IntersectionObserver(
         ([entry]) => {
-          const inFullscreen = document.fullscreenElement === video;
+          const inFullscreen = document.fullscreenElement === frame;
           if (entry.isIntersecting && watchedVideosRef.current[index] && !inFullscreen) {
-            video.controls = false;
             video.muted = true;
             video.volume = 0;
             video.play().catch(() => undefined);
+            setPlayingVideos((current) => current.map((playing, item) => item === index ? true : playing));
+            setMutedVideos((current) => current.map((muted, item) => item === index ? true : muted));
           } else if (!entry.isIntersecting && !inFullscreen) {
             video.muted = true;
             video.volume = 0;
             video.pause();
+            setPlayingVideos((current) => current.map((playing, item) => item === index ? false : playing));
+            setMutedVideos((current) => current.map((muted, item) => item === index ? true : muted));
           }
         },
         { threshold: 0.42 },
@@ -666,7 +750,12 @@ export function ScreeningRoom() {
               caption="Vertical film · Social · 9:16"
               title="Made for the first impression."
               description="A sharper rhythm for social—built to hold attention and make the resort instantly felt."
+              isPlaying={playingVideos[0]}
+              isMuted={mutedVideos[0]}
+              isWatched={watchedVideos[0]}
               onOpenVideo={openVideo}
+              onTogglePlayback={togglePlayback}
+              onToggleSound={toggleSound}
               videoRef={setVideoRef}
               frameRef={setFrameRef}
             />
@@ -677,7 +766,12 @@ export function ScreeningRoom() {
               caption="Brand film · Website · 16:9"
               title="Space, atmosphere, longing."
               description="A widescreen expression for the website, presentations and paid campaigns."
+              isPlaying={playingVideos[1]}
+              isMuted={mutedVideos[1]}
+              isWatched={watchedVideos[1]}
               onOpenVideo={openVideo}
+              onTogglePlayback={togglePlayback}
+              onToggleSound={toggleSound}
               videoRef={setVideoRef}
               frameRef={setFrameRef}
             />
@@ -712,7 +806,7 @@ export function ScreeningRoom() {
                   </a>
                   <a
                     className="contact-link"
-                    href="https://wa.me/?text=Hello%20Vanius%2C%20I%27d%20like%20to%20discuss%20The%20Ungasan%20film%20direction."
+                    href="https://wa.me/553123420754?text=Hello%20Vanius%2C%20I%27d%20like%20to%20discuss%20The%20Ungasan%20film%20direction."
                     target="_blank"
                     rel="noreferrer"
                     data-cursor-target
