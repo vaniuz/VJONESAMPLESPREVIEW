@@ -211,6 +211,8 @@ type FilmProps = {
   index: number;
   format: "vertical" | "horizontal";
   caption: string;
+  title: string;
+  description: string;
   activeSound: number | null;
   onToggleSound: (index: number) => void;
   videoRef: (index: number, video: HTMLVideoElement | null) => void;
@@ -223,6 +225,8 @@ function Film({
   index,
   format,
   caption,
+  title,
+  description,
   activeSound,
   onToggleSound,
   videoRef,
@@ -232,6 +236,22 @@ function Film({
 }: FilmProps) {
   return (
     <figure className={`film film--${format} block`}>
+      <figcaption className="film-meta">
+        <p className="film-number" data-split data-scroll-text>
+          0{index + 1}
+        </p>
+        <div className="film-heading">
+          <p className="film-kicker" data-split data-scroll-text>
+            {caption}
+          </p>
+          <h2 className="film-title" data-split data-scroll-text>
+            {title}
+          </h2>
+        </div>
+        <p className="film-description" data-split data-scroll-text>
+          {description}
+        </p>
+      </figcaption>
       <div
         className="film-frame"
         ref={(node) => frameRef(index, node)}
@@ -267,9 +287,6 @@ function Film({
           {activeSound === index ? "MUTE" : "SOUND"}
         </button>
       </div>
-      <figcaption className="caption" data-split data-scroll-text>
-        {caption}
-      </figcaption>
     </figure>
   );
 }
@@ -356,11 +373,14 @@ export function ScreeningRoom() {
 
     const splitElements = Array.from(root.querySelectorAll<HTMLElement>("[data-split]"));
     const linesByElement = new Map<HTMLElement, Element[]>();
+    const charsByElement = new Map<HTMLElement, Element[]>();
 
     splitElements.forEach((element) => {
+      const charReveal = element.hasAttribute("data-char-reveal");
       const split = SplitText.create(element, {
-        type: "lines",
+        type: charReveal ? "lines,chars" : "lines",
         linesClass: "split-line",
+        charsClass: "hero-char",
       });
       splits.push(split);
 
@@ -373,9 +393,18 @@ export function ScreeningRoom() {
         mask.appendChild(line);
       });
       linesByElement.set(element, split.lines);
+      if (charReveal) charsByElement.set(element, split.chars);
     });
 
+    const introWord = root.querySelector<HTMLElement>("[data-intro-word]");
+    const introSplit = introWord
+      ? SplitText.create(introWord, { type: "chars", charsClass: "intro-char" })
+      : undefined;
+    if (introSplit) splits.push(introSplit);
+
     if (reducedMotion) {
+      const intro = root.querySelector<HTMLElement>(".intro");
+      if (intro) gsap.set(intro, { display: "none" });
       root.querySelectorAll<HTMLElement>(".film-frame").forEach((frame) => {
         gsap.set(frame, { clipPath: "inset(0% 0 0 0)", scale: 1, opacity: 1 });
       });
@@ -507,21 +536,63 @@ export function ScreeningRoom() {
 
     setupCursorAndLinks();
 
-    const loadLines = Array.from(
+    const loadTargets = Array.from(
       root.querySelectorAll<HTMLElement>("[data-load-text]"),
-    ).flatMap((element) => linesByElement.get(element) ?? []);
+    ).flatMap(
+      (element) => charsByElement.get(element) ?? linesByElement.get(element) ?? [],
+    );
 
-    gsap.set(loadLines, { yPercent: 115, opacity: 0 });
+    const intro = root.querySelector<HTMLElement>(".intro");
+    const introCard = root.querySelector<HTMLElement>(".intro-card");
+    const introDot = root.querySelector<HTMLElement>(".intro-dot");
+    const accentStroke = root.querySelector<HTMLElement>(".accent-stroke");
+    const introChars = introSplit?.chars ?? [];
+
+    gsap.set(loadTargets, { yPercent: 120, opacity: 0 });
+    gsap.set(introChars, { yPercent: 120, opacity: 0 });
+    if (introCard) {
+      gsap.set(introCard, { autoAlpha: 0, scaleX: 0.16, scaleY: 0.2 });
+    }
+    if (accentStroke) {
+      gsap.set(accentStroke, { scaleX: 0, transformOrigin: "right center" });
+    }
+
     loadTimer = setTimeout(() => {
-      gsap.to(loadLines, {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.1,
-        stagger: 0.09,
-        ease: "vj",
-        onComplete: setupScroll,
-      });
-    }, 400);
+      const introTimeline = gsap.timeline({ defaults: { ease: "vj" } });
+
+      introTimeline
+        .to(introChars, {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.7,
+          stagger: 0.045,
+        })
+        .to(
+          introDot,
+          { scale: 1, duration: 0.45 },
+          "<0.25",
+        )
+        .to({}, { duration: 0.24 })
+        .to(introCard, { autoAlpha: 1, duration: 0.01 })
+        .to(introCard, {
+          scaleX: 1.08,
+          scaleY: 1.08,
+          duration: 0.95,
+        })
+        .set(intro, { autoAlpha: 0, pointerEvents: "none" })
+        .to(loadTargets, {
+          yPercent: 0,
+          opacity: 1,
+          duration: 1.05,
+          stagger: 0.025,
+          onComplete: setupScroll,
+        })
+        .to(
+          accentStroke,
+          { scaleX: 1, duration: 0.8 },
+          "<0.32",
+        );
+    }, 180);
 
     return () => {
       if (loadTimer) clearTimeout(loadTimer);
@@ -537,26 +608,59 @@ export function ScreeningRoom() {
 
   return (
     <div ref={rootRef} className="screening-room">
+      <div className="intro" aria-hidden="true">
+        <div className="intro-wordmark">
+          <span className="intro-word" data-intro-word>
+            vj one
+          </span>
+          <span className="intro-dot" />
+        </div>
+        <div className="intro-card" />
+      </div>
+
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <main className="column">
+            <div className="topbar" aria-label="Presentation details">
+              <span className="wordmark" data-split data-load-text>
+                vj one.
+              </span>
+              <div className="topbar-meta">
+                <span data-split data-load-text>
+                  The Ungasan · Bali
+                </span>
+                <span className="topbar-chip" data-split data-load-text>
+                  Private viewing · 02 films
+                </span>
+              </div>
+            </div>
+
             <header className="hero">
               <div className="hero-inner">
                 <p className="eyebrow" data-split data-load-text>
-                  The Ungasan Clifftop Resort
+                  Prepared for Icha Annisa · The Ungasan Clifftop Resort
                 </p>
-                <h1 className="hero-title" data-split data-load-text>
-                  Two concept films, made entirely
-                  <br />
-                  from imagery that already exists.
+                <h1 className="hero-title" data-split data-load-text data-char-reveal>
+                  <span className="title-sans">The Ungasan</span>
+                  <span className="title-serif">in motion.</span>
                 </h1>
+                <span className="accent-stroke" aria-hidden="true" />
+                <p className="hero-copy" data-split data-load-text>
+                  Two cinematic directions, created with AI from existing imagery—designed
+                  to turn place into feeling, and feeling into desire.
+                </p>
+                <p className="scroll-cue" data-split data-load-text>
+                  View the films
+                </p>
               </div>
             </header>
 
             <Film
               index={0}
               format="vertical"
-              caption="Vertical cut · Instagram, TikTok"
+              caption="Vertical film · Social · 9:16"
+              title="Made for the first impression."
+              description="A sharper rhythm for social—built to hold attention and make the resort instantly felt."
               activeSound={activeSound}
               onToggleSound={toggleSound}
               videoRef={setVideoRef}
@@ -565,16 +669,23 @@ export function ScreeningRoom() {
               onPointerActivity={handlePointerActivity}
             />
 
-            <section className="block">
-              <p className="statement" data-split data-scroll-text>
-                No shoot days. No villa taken out of service. Nothing filmed.
+            <section className="manifesto block">
+              <h2 className="manifesto-title" data-split data-scroll-text>
+                <span className="manifesto-sans">No new shoot.</span>
+                <span className="manifesto-serif">A new way to see</span>
+                <span className="manifesto-sans">what already exists.</span>
+              </h2>
+              <p className="manifesto-note" data-split data-scroll-text>
+                AI-assisted. Art-directed. Built from The Ungasan’s existing visual world.
               </p>
             </section>
 
             <Film
               index={1}
               format="horizontal"
-              caption="Brand film · Site, roadshow, paid"
+              caption="Brand film · Website · 16:9"
+              title="Space, atmosphere, longing."
+              description="A widescreen expression for the website, presentations and paid campaigns."
               activeSound={activeSound}
               onToggleSound={toggleSound}
               videoRef={setVideoRef}
@@ -584,24 +695,38 @@ export function ScreeningRoom() {
             />
 
             <section className="closing block">
-              <p className="closing-copy" data-split data-scroll-text>
-                If these are useful, I’ll build the same for Sundays and the weddings side.
+              <p className="closing-kicker" data-split data-scroll-text>
+                The opportunity
+              </p>
+              <h2 className="closing-copy" data-split data-scroll-text>
+                One image library.
+                <strong>New cinematic possibilities.</strong>
+              </h2>
+              <p className="closing-note" data-split data-scroll-text>
+                If this direction resonates, I’d be glad to shape the next chapter for The
+                Ungasan, Sundays and Weddings.
               </p>
 
-              <div className="email-wrap" data-split data-scroll-text>
+              <div className="email-wrap">
+                <p className="contact-label" data-split data-scroll-text>
+                  Continue the conversation
+                </p>
                 <a
                   className="email-link"
                   href="mailto:vjone.official@gmail.com"
                   data-cursor-target
+                  data-split
+                  data-scroll-text
                 >
                   vjone.official@gmail.com
                   <span className="email-underline" aria-hidden="true" />
                 </a>
               </div>
 
-              <p className="footer-mark" data-split data-scroll-text>
-                VJ ONE
-              </p>
+              <div className="footer-mark">
+                <span data-split data-scroll-text>VJ ONE · CINEMATIC VISUALS</span>
+                <span data-split data-scroll-text>PRIVATE PRESENTATION · 2026</span>
+              </div>
             </section>
           </main>
         </div>

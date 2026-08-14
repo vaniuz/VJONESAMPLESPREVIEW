@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "The Ungasan — Private Concept Presentation",
-  description: "Two concept films for The Ungasan Clifftop Resort.",
+  title: "The Ungasan in Motion — Private Presentation",
+  description: "Two AI-assisted cinematic directions for The Ungasan Clifftop Resort.",
   robots: {
     index: false,
     follow: false,
