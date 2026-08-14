@@ -731,15 +731,15 @@ export function ScreeningRoom() {
                   Prepared for Icha Annisa · The Ungasan Clifftop Resort
                 </p>
                 <h1 className="hero-title" data-split data-load-text data-char-reveal>
-                  <span className="title-sans">The Ungasan</span>
-                  <span className="title-serif">in motion.</span>
+                  <span className="title-sans">The Ungasan,</span>
+                  <span className="title-serif">before you arrive.</span>
                 </h1>
                 <p className="hero-copy" data-split data-load-text>
-                  Two cinematic directions designed to turn place into feeling—and feeling
-                  into desire.
+                  Two films made for one purpose — to make someone want to be here before
+                  they have decided to come.
                 </p>
                 <p className="scroll-cue" data-split data-load-text>
-                  View the films
+                  See them
                 </p>
               </div>
             </header>
@@ -747,9 +747,9 @@ export function ScreeningRoom() {
             <Film
               index={0}
               format="vertical"
-              caption="Vertical film · Social · 9:16"
-              title="Made for the first impression."
-              description="A sharper rhythm for social—built to hold attention and make the resort instantly felt."
+              caption="01 · VERTICAL · SOCIAL"
+              title="Stop the scroll. Start the wanting."
+              description="Built for the moment someone is not looking for you."
               isPlaying={playingVideos[0]}
               isMuted={mutedVideos[0]}
               isWatched={watchedVideos[0]}
@@ -763,9 +763,9 @@ export function ScreeningRoom() {
             <Film
               index={1}
               format="horizontal"
-              caption="Brand film · Website · 16:9"
-              title="Space, atmosphere, longing."
-              description="A widescreen expression for the website, presentations and paid campaigns."
+              caption="02 · BRAND FILM · WIDESCREEN"
+              title="For the moment they already are."
+              description="For the website, the deck and the campaign — when attention is already yours and desire has to do the rest."
               isPlaying={playingVideos[1]}
               isMuted={mutedVideos[1]}
               isWatched={watchedVideos[1]}
@@ -778,20 +778,20 @@ export function ScreeningRoom() {
 
             <section className="closing block">
               <p className="closing-kicker" data-split data-scroll-text>
-                The opportunity
+                What comes next
               </p>
               <h2 className="closing-copy" data-split data-scroll-text>
-                <strong>Direction, strategy &amp; agility.</strong>
-                <span className="closing-subline">The frame that wins the client.</span>
+                <strong>If this is the feeling you want</strong>
+                <span className="closing-subline">The Ungasan to carry.</span>
               </h2>
               <p className="closing-note" data-split data-scroll-text>
-                If this direction resonates, I’d be glad to shape the next chapter for The
-                Ungasan, Sundays and Weddings.
+                I would be glad to shape what follows — for the resort, for Sundays, and for
+                the weddings side.
               </p>
 
               <div className="email-wrap">
                 <p className="contact-label" data-split data-scroll-text>
-                  Continue the conversation
+                  Talk to me
                 </p>
                 <div className="contact-links">
                   <a
@@ -806,7 +806,7 @@ export function ScreeningRoom() {
                   </a>
                   <a
                     className="contact-link"
-                    href="https://wa.me/553123420754?text=Hello%20Vanius%2C%20I%27d%20like%20to%20discuss%20The%20Ungasan%20film%20direction."
+                    href="https://wa.me/553123420754?text=Hello%20Vanius%2C%20I%27d%20like%20to%20discuss%20The%20Ungasan%20films."
                     target="_blank"
                     rel="noreferrer"
                     data-cursor-target
