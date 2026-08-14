@@ -11,8 +11,8 @@ import * as THREE from "three";
 type ThreeCleanup = () => void;
 
 const VIDEO_SOURCES = [
-  "https://videos.pexels.com/video-files/7565438/7565438-uhd_1440_2560_25fps.mp4",
-  "https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4",
+  "/media/ungasan-vertical.mp4",
+  "/media/ungasan-horizontal.mp4",
 ] as const;
 
 let gsapReady = false;
