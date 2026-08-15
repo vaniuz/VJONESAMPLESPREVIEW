@@ -1,13 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0c0f0d"/>
-  <rect x="3.5" y="3.5" width="57" height="57" rx="9.5" fill="none" stroke="#b7a47a" stroke-opacity="0.72"/>
+  <style>
+    text { fill: #000; }
+    @media (prefers-color-scheme: dark) {
+      text { fill: #fff; }
+    }
+  </style>
   <text
     x="32"
-    y="40"
-    fill="#f2efe7"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="27"
-    font-weight="600"
+    y="41"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="29"
+    font-weight="700"
     letter-spacing="-1.5"
     text-anchor="middle"
   >VJ</text>

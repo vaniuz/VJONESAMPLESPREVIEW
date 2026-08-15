@@ -460,6 +460,68 @@ button {
   visibility: hidden;
 }
 
+.video-close {
+  position: absolute;
+  z-index: 5;
+  top: clamp(14px, 2vw, 28px);
+  right: clamp(14px, 2vw, 28px);
+  display: none;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 15px;
+  border: 1px solid rgba(241, 240, 235, 0.28);
+  border-radius: 999px;
+  background: rgba(13, 14, 13, 0.66);
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.video-close i {
+  position: relative;
+  width: 11px;
+  height: 11px;
+}
+
+.video-close i::before,
+.video-close i::after {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 11px;
+  height: 1px;
+  background: currentColor;
+  content: "";
+}
+
+.video-close i::before {
+  transform: rotate(45deg);
+}
+
+.video-close i::after {
+  transform: rotate(-45deg);
+}
+
+.film-frame:fullscreen .video-close,
+.film-frame:-webkit-full-screen .video-close {
+  display: inline-flex;
+}
+
+.video-close:hover,
+.video-close:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink);
+  outline: none;
+}
+
 .video-controls {
   position: absolute;
   z-index: 4;

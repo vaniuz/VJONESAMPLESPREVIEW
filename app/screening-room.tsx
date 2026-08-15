@@ -215,6 +215,7 @@ type FilmProps = {
   isMuted: boolean;
   isWatched: boolean;
   onOpenVideo: (index: number) => void;
+  onCloseVideo: (index: number) => void;
   onTogglePlayback: (index: number) => void;
   onToggleSound: (index: number) => void;
   videoRef: (index: number, video: HTMLVideoElement | null) => void;
@@ -231,6 +232,7 @@ function Film({
   isMuted,
   isWatched,
   onOpenVideo,
+  onCloseVideo,
   onTogglePlayback,
   onToggleSound,
   videoRef,
@@ -288,6 +290,18 @@ function Film({
         <div className="watch-prompt" aria-hidden="true">
           <span>Click to watch</span>
         </div>
+        <button
+          className="video-close"
+          type="button"
+          aria-label="Close film"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCloseVideo(index);
+          }}
+        >
+          <span>Close</span>
+          <i aria-hidden="true" />
+        </button>
         <div className="video-controls" aria-label={`${caption} playback controls`}>
           <button
             className="video-control video-control--play"
@@ -376,6 +390,29 @@ export function ScreeningRoom() {
       frame.webkitRequestFullscreen();
     } else {
       video.webkitEnterFullscreen?.();
+    }
+  }, []);
+
+  const closeVideo = useCallback((index: number) => {
+    const video = videosRef.current[index];
+    if (video) {
+      video.muted = true;
+      video.volume = 0;
+      video.pause();
+    }
+
+    setPlayingVideos((current) => current.map((playing, item) => item === index ? false : playing));
+    setMutedVideos((current) => current.map((muted, item) => item === index ? true : muted));
+
+    const fullscreenDocument = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => undefined);
+    } else if (fullscreenDocument.webkitFullscreenElement) {
+      Promise.resolve(fullscreenDocument.webkitExitFullscreen?.()).catch(() => undefined);
     }
   }, []);
 
@@ -754,6 +791,7 @@ export function ScreeningRoom() {
               isMuted={mutedVideos[0]}
               isWatched={watchedVideos[0]}
               onOpenVideo={openVideo}
+              onCloseVideo={closeVideo}
               onTogglePlayback={togglePlayback}
               onToggleSound={toggleSound}
               videoRef={setVideoRef}
@@ -770,6 +808,7 @@ export function ScreeningRoom() {
               isMuted={mutedVideos[1]}
               isWatched={watchedVideos[1]}
               onOpenVideo={openVideo}
+              onCloseVideo={closeVideo}
               onTogglePlayback={togglePlayback}
               onToggleSound={toggleSound}
               videoRef={setVideoRef}
