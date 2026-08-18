@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -13,12 +12,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-=======
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
->>>>>>> 4cd78149029dc4778a26683682c9d5f13ab38e1f
