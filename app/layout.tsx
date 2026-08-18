@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "The Ungasan in Motion — Private Presentation",
-  description: "Two cinematic directions for The Ungasan Clifftop Resort.",
+  title: "The Ungasan, Before You Arrive — Private Presentation",
+  description:
+    "Two films made for one purpose — to make someone want to be here before they have decided to come.",
   robots: {
     index: false,
     follow: false,
@@ -13,8 +15,26 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/favicon.svg?v=3",
+    shortcut: "/favicon.svg?v=3",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://vjone-ungasan-private.vercel.app",
+    title: "The Ungasan, Before You Arrive",
+    description:
+      "Two films made for one purpose — to make someone want to be here before they have decided to come.",
+    images: [
+      {
+        url: "https://vjone-ungasan-private.vercel.app/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "The Ungasan, Before You Arrive",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 };
 
@@ -34,7 +54,10 @@ export default function RootLayout({
       <head>
         <meta name="robots" content="noindex, nofollow" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
