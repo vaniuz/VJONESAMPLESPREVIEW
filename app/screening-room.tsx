@@ -807,7 +807,7 @@ export function ScreeningRoom() {
                   <span className="title-serif">in motion.</span>
                 </h1>
                 <p className="hero-copy" data-split data-load-text>
-                  Two cinematic directions designed to turn place into feeling—and feeling
+                  Three cinematic directions designed to turn place into feeling—and feeling
                   into desire.
                 </p>
                 <p className="scroll-cue" data-split data-load-text>
@@ -821,7 +821,7 @@ export function ScreeningRoom() {
               format="horizontal"
               caption=""
               title="The story begins wide."
-              description="Cinematic — space, atmosphere, and the feeling of arrival."
+              description="Cinematic — space, atmosphere & feeling."
               isPlaying={playingVideos[0]}
               isMuted={mutedVideos[0]}
               isWatched={watchedVideos[0]}
