@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { gsap } from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -11,6 +12,7 @@ import * as THREE from "three";
 type ThreeCleanup = () => void;
 
 const VIDEO_SOURCES = [
+  "/media/ungasan-new.mp4",
   "/media/ungasan-vertical.mp4",
   "/media/ungasan-horizontal.mp4",
 ] as const;
@@ -20,7 +22,11 @@ let gsapReady = false;
 function registerMotion() {
   if (gsapReady) return;
   gsap.registerPlugin(ScrollTrigger, ScrollSmoother, SplitText, CustomEase);
-  CustomEase.create("vj", "0.16, 1, 0.3, 1");
+  try {
+    CustomEase.create("vj", "0.16, 1, 0.3, 1");
+  } catch {
+    gsap.registerEase("vj", "power3.out");
+  }
   gsapReady = true;
 }
 
@@ -330,10 +336,14 @@ export function ScreeningRoom() {
   const rootRef = useRef<HTMLDivElement>(null);
   const videosRef = useRef<Array<HTMLVideoElement | null>>([]);
   const framesRef = useRef<Array<HTMLElement | null>>([]);
-  const watchedVideosRef = useRef<boolean[]>([false, false]);
-  const [playingVideos, setPlayingVideos] = useState<boolean[]>([false, false]);
-  const [mutedVideos, setMutedVideos] = useState<boolean[]>([true, true]);
-  const [watchedVideos, setWatchedVideos] = useState<boolean[]>([false, false]);
+  const watchedVideosRef = useRef<boolean[]>([false, false, false]);
+  const [playingVideos, setPlayingVideos] = useState<boolean[]>([false, false, false]);
+  const [mutedVideos, setMutedVideos] = useState<boolean[]>([true, true, true]);
+  const [watchedVideos, setWatchedVideos] = useState<boolean[]>([false, false, false]);
+  const [overlayIndex, setOverlayIndex] = useState<number | null>(null);
+  const [overlayPlaying, setOverlayPlaying] = useState(false);
+  const [overlayMuted, setOverlayMuted] = useState(false);
+  const overlayVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const setVideoRef = useCallback((index: number, node: HTMLVideoElement | null) => {
     videosRef.current[index] = node;
@@ -344,40 +354,77 @@ export function ScreeningRoom() {
   }, []);
 
   const openVideo = useCallback((index: number) => {
-    const video = videosRef.current[index] as
-      | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
-      | null;
+    const video = videosRef.current[index];
     if (!video) return;
-
-    const frame = framesRef.current[index] as
-      | (HTMLElement & { webkitRequestFullscreen?: () => void })
-      | null;
 
     watchedVideosRef.current[index] = true;
     setWatchedVideos((current) => current.map((watched, item) => watched || item === index));
+
     videosRef.current.forEach((otherVideo, otherIndex) => {
       if (!otherVideo || otherIndex === index) return;
       otherVideo.muted = true;
       otherVideo.volume = 0;
       otherVideo.pause();
     });
-    setPlayingVideos((current) => current.map((_, item) => item === index));
-    setMutedVideos((current) => current.map((_, item) => item !== index));
+    setPlayingVideos((current) => current.map(() => false));
+    setMutedVideos((current) => current.map(() => true));
 
     video.pause();
     video.currentTime = 0;
-    video.muted = false;
-    video.volume = 1;
-    video.play().catch(() => undefined);
+    video.muted = true;
+    video.volume = 0;
+    document.documentElement.classList.add("video-overlay-open");
 
-    if (frame?.requestFullscreen) {
-      frame.requestFullscreen().catch(() => undefined);
-    } else if (frame?.webkitRequestFullscreen) {
-      frame.webkitRequestFullscreen();
+    setOverlayIndex(index);
+    setOverlayPlaying(true);
+    setOverlayMuted(false);
+  }, []);
+
+  const closeVideo = useCallback(() => {
+    document.documentElement.classList.remove("video-overlay-open");
+    const overlayVideo = overlayVideoRef.current;
+    if (overlayVideo) {
+      overlayVideo.pause();
+      overlayVideo.muted = true;
+      overlayVideo.volume = 0;
+    }
+    setOverlayPlaying(false);
+    setOverlayIndex(null);
+  }, []);
+
+  const toggleOverlayPlayback = useCallback(() => {
+    const video = overlayVideoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => undefined);
+      setOverlayPlaying(true);
     } else {
-      video.webkitEnterFullscreen?.();
+      video.pause();
+      setOverlayPlaying(false);
     }
   }, []);
+
+  const toggleOverlaySound = useCallback(() => {
+    setOverlayMuted((muted) => {
+      const nextMuted = !muted;
+      const video = overlayVideoRef.current;
+      if (video) {
+        video.muted = nextMuted;
+        video.volume = nextMuted ? 0 : 1;
+      }
+      return nextMuted;
+    });
+  }, []);
+
+  const handleOverlayKeyDown = useCallback(
+    (event: ReactKeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeVideo();
+      }
+    },
+    [closeVideo],
+  );
 
   const togglePlayback = useCallback((index: number) => {
     const video = videosRef.current[index];
@@ -451,17 +498,33 @@ export function ScreeningRoom() {
 
     const stopFullscreenPlayback = () => {
       if (document.fullscreenElement) return;
+      framesRef.current.forEach((frame) => {
+        frame?.classList.remove("vertical-fullscreen");
+      });
+      rootRef.current?.classList.remove("is-fullscreen");
       videosRef.current.forEach((video) => {
         if (!video) return;
         video.muted = true;
         video.volume = 0;
         video.pause();
       });
-      setPlayingVideos([false, false]);
-      setMutedVideos([true, true]);
+      setPlayingVideos([false, false, false, false]);
+      setMutedVideos([true, true, true, true]);
     };
 
-    document.addEventListener("fullscreenchange", stopFullscreenPlayback);
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement) {
+        rootRef.current?.classList.add("is-fullscreen");
+      } else {
+        rootRef.current?.classList.remove("is-fullscreen");
+        framesRef.current.forEach((frame) => {
+          frame?.classList.remove("vertical-fullscreen");
+        });
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
     videosRef.current.forEach((video) => {
       video?.addEventListener("webkitendfullscreen", stopFullscreenPlayback);
     });
@@ -680,8 +743,17 @@ export function ScreeningRoom() {
         });
     }, 180);
 
+    // Safety fallback: force hide intro after 3.5s in case animation fails
+    const introSafetyTimer = setTimeout(() => {
+      if (intro) {
+        gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
+      }
+    }, 3500);
+
     return () => {
       if (loadTimer) clearTimeout(loadTimer);
+      if (introSafetyTimer) clearTimeout(introSafetyTimer);
+      document.documentElement.classList.remove("video-overlay-open");
       playbackObservers.forEach((observer) => observer.disconnect());
       document.removeEventListener("fullscreenchange", stopFullscreenPlayback);
       videosRef.current.forEach((video) => {
@@ -720,7 +792,7 @@ export function ScreeningRoom() {
                   The Ungasan · Bali
                 </span>
                 <span className="topbar-chip" data-split data-load-text>
-                  Private viewing · 02 films
+                  Private viewing · 03 films
                 </span>
               </div>
             </div>
@@ -746,10 +818,10 @@ export function ScreeningRoom() {
 
             <Film
               index={0}
-              format="vertical"
-              caption="Vertical film · Social · 9:16"
-              title="Made for the first impression."
-              description="A sharper rhythm for social—built to hold attention and make the resort instantly felt."
+              format="horizontal"
+              caption=""
+              title="The story begins wide."
+              description="Cinematic — space, atmosphere, and the feeling of arrival."
               isPlaying={playingVideos[0]}
               isMuted={mutedVideos[0]}
               isWatched={watchedVideos[0]}
@@ -762,13 +834,29 @@ export function ScreeningRoom() {
 
             <Film
               index={1}
+              format="vertical"
+              caption="Vertical film · Social · 9:16"
+              title="Made for the first impression."
+              description="A sharper rhythm for social—built to hold attention and make the resort instantly felt. Opens in 9:16."
+              isPlaying={playingVideos[1]}
+              isMuted={mutedVideos[1]}
+              isWatched={watchedVideos[1]}
+              onOpenVideo={openVideo}
+              onTogglePlayback={togglePlayback}
+              onToggleSound={toggleSound}
+              videoRef={setVideoRef}
+              frameRef={setFrameRef}
+            />
+
+            <Film
+              index={2}
               format="horizontal"
               caption="Brand film · Website · 16:9"
               title="Space, atmosphere, longing."
               description="A widescreen expression for the website, presentations and paid campaigns."
-              isPlaying={playingVideos[1]}
-              isMuted={mutedVideos[1]}
-              isWatched={watchedVideos[1]}
+              isPlaying={playingVideos[2]}
+              isMuted={mutedVideos[2]}
+              isWatched={watchedVideos[2]}
               onOpenVideo={openVideo}
               onTogglePlayback={togglePlayback}
               onToggleSound={toggleSound}
@@ -829,6 +917,79 @@ export function ScreeningRoom() {
       </div>
 
       <div className="cursor" aria-hidden="true" />
+
+      {overlayIndex !== null ? (
+        <div
+          className="video-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Video playback"
+          onKeyDown={handleOverlayKeyDown}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeVideo();
+          }}
+        >
+          <button
+            className="overlay-close"
+            type="button"
+            aria-label="Close video"
+            onClick={closeVideo}
+          >
+            <span className="close-icon" aria-hidden="true">
+              ×
+            </span>
+            <span className="close-label">Close</span>
+          </button>
+
+          <div className="overlay-stage">
+            <div
+              className={`overlay-aspect-ratio${overlayIndex === 1 ? " is-vertical" : ""}`}
+            >
+              <video
+                ref={overlayVideoRef}
+                className="overlay-video"
+                src={VIDEO_SOURCES[overlayIndex]}
+                crossOrigin="anonymous"
+                autoPlay
+                loop
+                playsInline
+                muted={overlayMuted}
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                disablePictureInPicture
+                onContextMenu={(event) => event.preventDefault()}
+                onPlay={() => setOverlayPlaying(true)}
+                onPause={() => setOverlayPlaying(false)}
+              />
+            </div>
+
+            <div className="overlay-controls" aria-label="Playback controls">
+              <button
+                className="overlay-control"
+                type="button"
+                aria-label={overlayPlaying ? "Pause video" : "Play video"}
+                onClick={toggleOverlayPlayback}
+              >
+                <span className={overlayPlaying ? "pause-icon" : "play-icon"} aria-hidden="true" />
+                <span className="control-label">{overlayPlaying ? "Pause" : "Play"}</span>
+              </button>
+              <span className="control-divider" aria-hidden="true" />
+              <button
+                className={`overlay-control${overlayMuted ? " is-muted" : ""}`}
+                type="button"
+                aria-label={overlayMuted ? "Turn sound on" : "Mute video"}
+                onClick={toggleOverlaySound}
+              >
+                <span className="sound-bars" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="control-label">Sound {overlayMuted ? "off" : "on"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
