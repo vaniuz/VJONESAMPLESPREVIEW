@@ -1,0 +1,364 @@
+/* ELIRE — dark palette override: #0C0F0D · #EDE7DD · #C4643C */
+
+.elire,
+.elire *,
+.elire .film-frame[role="button"],
+.elire .contact-link {
+  cursor: auto !important;
+}
+
+.elire a,
+.elire button,
+.elire [role="button"],
+.elire [data-cursor-target] {
+  cursor: pointer !important;
+}
+
+/* Custom cursor (like main version) with ELIRE palette */
+@media (pointer: fine) {
+  /* Hide native cursor, use custom */
+  .elire .screening-room,
+  .elire .screening-room * {
+    cursor: none !important;
+  }
+  
+  /* Show native pointer on clickable elements */
+  .elire a,
+  .elire button,
+  .elire [role="button"],
+  .elire [data-cursor-target],
+  .elire .hero-play-btn,
+  .elire .video-control,
+  .elire .contact-link {
+    cursor: pointer !important;
+  }
+  
+  /* Custom cursor element */
+  .elire .cursor {
+    display: block !important;
+  }
+}
+
+/* Mobile/touch: always show native pointers */
+@media (pointer: coarse) {
+  .elire .cursor {
+    display: none !important;
+  }
+}
+
+.elire .cursor {
+  position: fixed;
+  z-index: 120;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: difference;
+}
+
+/* Clickable cursor on video frames — specifically video 1 (hero) */
+.elire .hero-film-frame[role="button"]:hover,
+.elire .hero-film-frame[role="button"]:focus-visible {
+  cursor: pointer !important;
+}
+
+/* Preloader / Intro with hero palette */
+.elire .intro {
+  background: var(--paper);
+}
+
+.elire .intro-wordmark {
+  color: var(--ink);
+}
+
+.elire .intro-card {
+  background: #0c0f0d;
+}
+
+.elire .intro-dot {
+  background: var(--accent);
+}
+
+.elire .contact-link {
+  font-size: clamp(1rem, 2vw, 1.8rem);
+}
+
+html,
+body {
+  background: #0c0f0d;
+  color: #ede7dd;
+}
+
+.elire {
+  --paper: #0c0f0d;
+  --ink: #ede7dd;
+  --accent: #c4643c;
+  --line: rgba(237, 231, 221, 0.22);
+  --muted: rgba(237, 231, 221, 0.62);
+}
+
+.elire.screening-room {
+  background: #0c0f0d;
+}
+
+.elire ::selection {
+  background: var(--accent);
+  color: #0c0f0d;
+}
+
+/* Hero play button — centered overlay — premium minimal */
+.elire .hero-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 36px;
+  background: rgba(12, 15, 13, 0.4);
+  border: 1px solid rgba(237, 231, 221, 0.3);
+  border-radius: 100px;
+  color: #ede7dd;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 4;
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(237, 231, 221, 0.08) inset;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.elire .hero-play-btn:hover,
+.elire .hero-play-btn:focus-visible {
+  background: rgba(237, 231, 221, 0.15);
+  border-color: #ede7dd;
+  transform: translate(-50%, -50%) scale(1.03);
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(237, 231, 221, 0.2) inset;
+  outline: none;
+}
+
+.elire .hero-play-label {
+  display: block;
+}
+
+.elire .topbar-chip {
+  color: #0c0f0d;
+}
+
+/* HERO — text left, large video right */
+.elire .hero {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+  min-height: 110svh;
+  padding-block: 20vh 9vh;
+}
+
+.elire .hero-text {
+  width: 100%;
+}
+
+.elire .hero-title {
+  color: #ede7dd;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  line-height: 0.94;
+}
+
+.elire .hero-copy {
+  margin-top: 4vh;
+}
+
+.elire .hero-film {
+  margin: 0;
+}
+
+.elire .hero-film-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+/* Close button shown only when video 1 is fullscreen */
+.elire .video-close {
+  position: absolute;
+  z-index: 6;
+  top: 18px;
+  right: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(237, 231, 221, 0.6);
+  border-radius: 8px;
+  background: rgba(12, 15, 13, 0.7);
+  color: #ede7dd;
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+}
+
+.elire .film-frame:fullscreen .video-close {
+  display: inline-flex;
+}
+
+.elire .hero-film-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  font-family: var(--sans);
+}
+
+.elire .hero-film-kicker {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.elire .hero-film-cap {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.elire .film-frame {
+  background: #15110d;
+}
+
+.elire .video-control {
+  color: #ede7dd;
+}
+
+.elire .video-control:hover,
+.elire .video-control:focus-visible {
+  color: #0c0f0d;
+}
+
+.elire .film-frame:hover .watch-prompt span,
+.elire .film-frame:focus-visible .watch-prompt span {
+  color: #0c0f0d;
+}
+
+/* Closing line — smaller font */
+.elire .closing-copy--small {
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+/* FILM 02 — video right, copy left (matching hero layout) */
+@media (min-width: 821px) {
+  .elire figure.film--vertical.film--minimal {
+    display: grid !important;
+    grid-template-columns: 1fr minmax(0, 420px) !important;
+    gap: clamp(32px, 5vw, 80px) !important;
+    align-items: start !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .film-frame {
+    grid-column: 2 !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 9 / 16 !important;
+    max-height: 78vh !important;
+    clip-path: none !important;
+    opacity: 1 !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .film-meta {
+    grid-column: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding-bottom: 0 !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .elire .hero {
+    grid-template-columns: 1fr;
+    gap: 6vh;
+    padding-block: 16vh 7vh;
+    min-height: auto;
+  }
+
+  .elire .hero-title {
+    font-size: clamp(2rem, 11vw, 4rem);
+  }
+
+  .elire .hero::after {
+    content: "Gire a tela para ver em tela cheia";
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4vh;
+    animation: rotate-hint 2.5s ease-in-out infinite;
+  }
+
+  @keyframes rotate-hint {
+    0%, 100% { opacity: 0.5; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-4px); }
+  }
+
+  .elire figure.film--vertical.film--minimal {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6vh !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .film-frame {
+    grid-column: auto !important;
+    width: min(100%, calc(78svh * 9 / 16)) !important;
+    height: auto !important;
+    clip-path: none !important;
+    opacity: 1 !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .film-meta {
+    grid-column: auto !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .video-controls {
+    display: flex !important;
+  }
+
+  .elire figure.film--vertical.film--minimal .video-control--sound,
+  .elire figure.film--vertical.film--minimal .control-divider {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elire .intro {
+    background: var(--ink);
+  }
+}
