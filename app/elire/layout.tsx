@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "https://vjone-ungasan-private.vercel.app/elire",
+    url: "https://vjone-elire-sample.vercel.app/elire",
     title: "ELIRE in Motion — Private Presentation",
     description:
       "ELIRE is built on light, shadow and form. This is what that does in motion.",
     images: [
       {
-        url: "https://vjone-ungasan-private.vercel.app/og.jpg",
+        url: "https://vjone-elire-sample.vercel.app/og.jpg",
         width: 1200,
         height: 630,
         alt: "ELIRE in Motion",
