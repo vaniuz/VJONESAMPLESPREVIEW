@@ -854,7 +854,7 @@ export function ScreeningRoom() {
               format="vertical"
               caption="BEFORE / AFTER"
               title="Before and after."
-              description="Same renders. Same frames."
+              description="Same renders, different feeling."
               minimal
               isPlaying={playingVideos[1]}
               isMuted={mutedVideos[1]}
@@ -872,9 +872,6 @@ export function ScreeningRoom() {
               </h2>
 
               <div className="email-wrap">
-                <p className="contact-label" data-split data-scroll-text>
-                  Continue the conversation
-                </p>
                 <div className="contact-links">
                   <a
                     className="contact-link"
