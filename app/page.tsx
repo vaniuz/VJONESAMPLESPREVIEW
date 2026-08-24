@@ -1,4 +1,4 @@
-import { ScreeningRoom } from "./screening-room";
+import { ScreeningRoom } from "./elire/screening-room";
 
 export default function Home() {
   return <ScreeningRoom />;

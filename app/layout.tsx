@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import "./elire/elire.css";
 
 export const metadata: Metadata = {
-  title: "The Ungasan, Before You Arrive — Private Presentation",
+  title: "ELIRE in Motion — Private Presentation",
   description:
-    "Two films made for one purpose — to make someone want to be here before they have decided to come.",
+    "ELIRE is built on light, shadow and form. This is what that does in motion.",
   robots: {
     index: false,
     follow: false,
@@ -21,15 +22,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://vjone-ungasan-private.vercel.app",
-    title: "The Ungasan, Before You Arrive",
+    title: "ELIRE in Motion — Private Presentation",
     description:
-      "Two films made for one purpose — to make someone want to be here before they have decided to come.",
+      "ELIRE is built on light, shadow and form. This is what that does in motion.",
     images: [
       {
         url: "https://vjone-ungasan-private.vercel.app/og.jpg",
         width: 1200,
         height: 630,
-        alt: "The Ungasan, Before You Arrive",
+        alt: "ELIRE in Motion",
       },
     ],
   },
@@ -55,7 +56,9 @@ export default function RootLayout({
         <meta name="robots" content="noindex, nofollow" />
       </head>
       <body>
-        {children}
+        <div style={{ cursor: "auto" }}>
+          {children}
+        </div>
         <Analytics />
       </body>
     </html>
