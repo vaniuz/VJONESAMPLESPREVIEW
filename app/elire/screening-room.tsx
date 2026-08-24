@@ -780,7 +780,7 @@ export function ScreeningRoom() {
                       controlsList="nodownload noplaybackrate noremoteplayback"
                       disablePictureInPicture
                       onContextMenu={(event) => event.preventDefault()}
-                      aria-label="CONCEPT FILM · 16:9"
+                      aria-label="CONCEPT FILM"
                     />
                   </div>
                   {showPlayBtn && (
@@ -843,7 +843,7 @@ export function ScreeningRoom() {
                   </div>
                 </div>
                 <figcaption className="hero-film-meta">
-                  <span className="hero-film-kicker">CONCEPT FILM · 16:9</span>
+                  <span className="hero-film-kicker">CONCEPT FILM</span>
                   <span className="hero-film-cap">Built from ELIRE&rsquo;s published renders.</span>
                 </figcaption>
               </figure>
@@ -852,7 +852,7 @@ export function ScreeningRoom() {
             <Film
               index={1}
               format="vertical"
-              caption="BEFORE / AFTER · 9:16"
+              caption="BEFORE / AFTER"
               title="Before and after."
               description="Same renders. Same frames."
               minimal
