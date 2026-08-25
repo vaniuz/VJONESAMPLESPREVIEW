@@ -760,10 +760,14 @@ export function ScreeningRoom() {
                   tabIndex={0}
                   aria-label="Watch the concept film with sound"
                   data-cursor-target
-                  onClick={() => openVideo(0, true)}
+                  onClick={() => {
+                    setShowPlayBtn(false);
+                    openVideo(0, true);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
+                      setShowPlayBtn(false);
                       openVideo(0, true);
                     }
                   }}

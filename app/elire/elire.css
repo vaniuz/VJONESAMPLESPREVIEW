@@ -310,7 +310,7 @@ body {
   }
 
   .elire .hero::after {
-    content: "Gire a tela para ver em tela cheia";
+    content: "Rotate for fullscreen";
     display: block;
     text-align: center;
     font-size: 11px;
@@ -339,6 +339,7 @@ body {
     height: auto !important;
     clip-path: none !important;
     opacity: 1 !important;
+    justify-self: center !important;
   }
 
   .elire figure.film--vertical.film--minimal .film-meta {
